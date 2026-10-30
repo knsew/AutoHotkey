@@ -12,11 +12,10 @@
  * 注意：源码是 UTF-8，/utf-8 必不可少，否则中文界面会乱码。
  * 本机无 Windows 环境，本文件未在真机上编译运行过，首跑以 CI 为准。
  * ============================================================ */
-#define UNICODE
-#define _UNICODE
 #define WIN32_LEAN_AND_MEAN
 #define _WIN32_WINNT 0x0601
 #include <windows.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
