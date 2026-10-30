@@ -1,0 +1,15 @@
+@character 魈
+@name 下落攻击连发（按住循环）
+@trigger ^6
+@mode hold
+@status converted
+@source Kramar1337/GenshinImpact-AHK-flex Xiao SpamPlunge（jopa15）
+@fps 60
+; 原代码逻辑：按住宏键期间循环“跳 140~155ms、左键点一下、等 25~40ms”。
+; 注意：原 README 叫它 SpamPlunge(13)，但代码里并没有数 13 次，是按住多久循环多久，
+; 因此本文件不做 13 次硬性计数，松开 Ctrl+6 即停。
+; 前置：先手动开大（Q），再按住 Ctrl+6。
+tap space 20
+wait 140 155
+tap click 20
+wait 25 40

@@ -1,0 +1,13 @@
+@character Mona
+@name Wavedash
+@trigger none
+@mode once
+@status converted
+@source NineTailTeam/Genshin-Impact-Macro Combat/Mona/Wavedash/WavedashMona.ahk
+@fps 60
+; 原触发键：N；本库默认不绑定，改 @trigger 后由引擎加载。
+; 原仓库说明：All macros work at 60 FPS, 90 ms Ping。
+tap space 50
+wait 50
+tap space 50
+wait 700

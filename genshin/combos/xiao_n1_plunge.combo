@@ -1,0 +1,17 @@
+@character 魈
+@name 普攻1段接下落攻击（按住循环）
+@trigger ^7
+@mode hold
+@status converted
+@source Kramar1337/GenshinImpact-AHK-flex Xiao N1SpamPlunge（jopa16）
+@fps 60
+; 原代码逻辑：按住宏键期间循环“左键点一下、等 60~75ms、跳 140~155ms、左键点一下、等 60~75ms”。
+; 注意：原 README 叫它 N1SpamPlunge(11)，但代码里并没有数 11 次，是按住多久循环多久，
+; 因此本文件不做 11 次硬性计数，松开 Ctrl+7 即停。
+; 前置：先手动开大（Q），再按住 Ctrl+7。
+tap click 20
+wait 60 75
+tap space 20
+wait 140 155
+tap click 20
+wait 60 75

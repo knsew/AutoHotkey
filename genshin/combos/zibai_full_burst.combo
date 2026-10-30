@@ -1,0 +1,30 @@
+@character 兹白
+@name 全套变体 3轮后用大招替换1轮（草稿）
+@trigger ^0
+@mode once
+@status draft
+@source 公开手法：Full combo 中把 1 轮 N4E 换成 N1 + Q + 特殊E（大招就绪时）
+@fps 60
+; 重要：本文件是草稿。Q 后是否还要补普攻、Q 的等待时间、大招延长月转时隙的衔接，
+; 公开记号里没有给到毫秒级时序，全部是占位估算，须 Ji 真机确认后再定稿。
+; 结构：E → 3 轮（4 普攻 + 特殊E）→ 1 普攻 + 大招 + 特殊E。
+tap e 50
+wait 200
+loop 3
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap e 50
+wait 400
+endloop
+tap click 50
+wait 550
+tap q 50
+wait 500
+tap e 50
+wait 400

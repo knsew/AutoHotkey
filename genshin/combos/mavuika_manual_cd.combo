@@ -1,0 +1,14 @@
+@character 玛薇卡
+@name 手动单段重击冲刺
+@trigger ^3
+@mode once
+@status converted
+@source mmmaeko/genshin-ahk Mavu Manual CDCF.ahk
+@fps 60
+; 单段 ChargeDash（不等终结），供手动拼接用。原脚本触发键是 `，已改为 Ctrl+3。
+down click
+wait 70 80
+tap rclick 20
+wait 100 115
+up click
+wait 185 200

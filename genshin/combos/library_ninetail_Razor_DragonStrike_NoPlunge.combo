@@ -1,0 +1,20 @@
+@character Razor
+@name DragonStrike_NoPlunge
+@trigger none
+@mode once
+@status converted
+@source NineTailTeam/Genshin-Impact-Macro Combat/Razor/Dragon Strike/Dragon Strike No Plunge/DragonStrikeRazorNoPlunge.ahk
+@fps 60
+; 原触发键：`；本库默认不绑定，改 @trigger 后由引擎加载。
+; 原仓库说明：All macros work at 60 FPS, 90 ms Ping。
+down click
+wait 11
+up click
+wait 365
+down shift
+wait 20
+up shift
+down space
+wait 25
+up space
+wait 25

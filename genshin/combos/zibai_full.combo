@@ -1,0 +1,25 @@
+@character 兹白
+@name 全套 E接4轮4普攻接特殊E
+@trigger ^8
+@mode once
+@status estimate
+@source 公开手法：E → 4×[N4 + 特殊E]；4 普攻约 2.4 秒，特殊E约 0.45 秒（见 README 来源说明）
+@fps 60
+; 重要：兹白在 GitHub 上搜不到现成宏，本文件不是转换来的，是按公开手法新写的，
+; 每段普攻按 600ms 估算（2.4 秒 / 4 段），特殊E按 450ms 估算，全部时序待 Ji 真机调校，
+; 切勿当成已验证的宏直接用于高难度场合。
+; 机制：E 进入月转时隙，E 后立刻有浮光可放特殊E；每 4 普攻放 1 次特殊E，共 4 轮。
+tap e 50
+wait 200
+loop 4
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap e 50
+wait 400
+endloop

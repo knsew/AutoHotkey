@@ -1,0 +1,22 @@
+@character 玛薇卡
+@name 融化 2段三段重击
+@trigger ^2
+@mode once
+@status converted
+@source mmmaeko/genshin-ahk Mavu Melt 2(C3Fd) C1F.ahk
+@fps 60
+; 展开说明：Charge3Dash = 按住左键，等 70~80ms 后右键冲刺，再按住约 1920~1935ms 松开，
+; 再等 1250~1269ms；第 2 次跟进时按住时间 +10ms。
+; 原脚本触发键是 `，本管理器已按 Ji 要求改为 Ctrl+2。
+down click
+wait 70 80
+tap rclick 20
+wait 1920 1935
+up click
+wait 1250 1269
+down click
+wait 70 80
+tap rclick 20
+wait 1930 1945
+up click
+wait 1250 1269

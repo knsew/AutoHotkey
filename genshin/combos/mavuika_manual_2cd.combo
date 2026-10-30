@@ -1,0 +1,20 @@
+@character 玛薇卡
+@name 手动两段重击冲刺接终结
+@trigger ^4
+@mode once
+@status converted
+@source mmmaeko/genshin-ahk Mavu Manual 2CD CF.ahk
+@fps 60
+; ChargeDash（不等终结）+ ChargeDash（等终结）。原脚本触发键是 `，已改为 Ctrl+4。
+down click
+wait 70 80
+tap rclick 20
+wait 100 115
+up click
+wait 185 200
+down click
+wait 70 80
+tap rclick 20
+wait 100 115
+up click
+wait 1385 1400

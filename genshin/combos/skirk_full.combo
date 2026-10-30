@@ -1,0 +1,153 @@
+@character 丝柯克
+@name 全套 2N2D 3NW
+@trigger ^5
+@mode once
+@status converted
+@source mmmaeko/genshin-ahk Skirk 2N2D 3NW.ahk
+@fps 60
+; 展开口径（原脚本函数展开，带随机抖动的近似值）：
+; 普攻 1 段约 100~110ms = 左键按住 10~20ms + 等 85~95ms；
+; 普攻 2 段约 160~170ms = 按住 10~20ms + 等 145~155ms；
+; N2D = 2 普攻 + 右键冲刺，总长约 450ms，冲刺后等 170~190ms；
+; N2Q = 2 普攻 + 按 Q 收集虚境，总长约 560ms，Q 后等 250~270ms；
+; N3W = 3 普攻（第 2 段等 245~255ms，第 3 段等 375~385ms）+ 按住 W 450ms 走取消 + 等 100ms；
+; N2CD = 2 普攻 + 重击按住 480~490ms + 右键冲刺 + 等 350ms；
+; 结尾 N2 在原脚本里第 2 段被注释掉了，实际只有第 1 段普攻。
+; 原脚本触发键是 `，本管理器已按 Ji 要求改为 Ctrl+5。
+tap e 50
+wait 350 360
+; 第 1 段：N2D、N2D、N2Q
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+tap rclick 20
+wait 170 190
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+tap rclick 20
+wait 170 190
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+tap q 50
+wait 250 270
+; 第 2 段：2 次（N2D、N2D、N3W）
+loop 2
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+tap rclick 20
+wait 170 190
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+tap rclick 20
+wait 170 190
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 245 255
+down click
+wait 10 20
+up click
+wait 375 385
+down w
+wait 450
+up w
+wait 100
+endloop
+; 第 3 段：N2CD、N2D、N3W
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+down click
+wait 480 490
+up click
+tap rclick 20
+wait 350
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+tap rclick 20
+wait 170 190
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 245 255
+down click
+wait 10 20
+up click
+wait 375 385
+down w
+wait 450
+up w
+wait 100
+; 结尾：N2D、N2D、N2（仅第 1 段）
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+tap rclick 20
+wait 170 190
+down click
+wait 10 20
+up click
+wait 85 95
+down click
+wait 10 20
+up click
+wait 145 155
+tap rclick 20
+wait 170 190
+down click
+wait 10 20
+up click
+wait 85 95

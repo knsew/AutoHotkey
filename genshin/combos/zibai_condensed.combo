@@ -1,0 +1,42 @@
+@character 兹白
+@name 前置压缩版 E n4 n4 E n1E n1E QE
+@trigger ^9
+@mode once
+@status estimate
+@source 公开手法压缩版：E n4 n4 E n1E n1E QE（仅前置爆发用，无额外伤害，见 README）
+@fps 60
+; 重要：同全套，本文件是按公开手法记号新写的，时序全部是估算（普攻 600ms、特殊E 450ms），待真机调校。
+; 记号解读：E = 战技进月转时隙；n4 = 4 普攻；E = 特殊E灵驹飞踏；n1 = 1 普攻；
+; QE = 大招后接特殊E；Q 后等待 500ms 是占位值，不是实测值。
+tap e 50
+wait 200
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap click 50
+wait 550
+tap e 50
+wait 400
+tap click 50
+wait 550
+tap e 50
+wait 400
+tap click 50
+wait 550
+tap e 50
+wait 400
+tap q 50
+wait 500
+tap e 50
+wait 400

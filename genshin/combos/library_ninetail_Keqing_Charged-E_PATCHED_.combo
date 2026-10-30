@@ -1,0 +1,23 @@
+@character Keqing
+@name Charged-E (PATCHED)
+@trigger none
+@mode once
+@status converted
+@source NineTailTeam/Genshin-Impact-Macro Combat/Keqing/Charged-E (PATCHED)/Charged-EKeqing.ahk
+@fps 60
+; 原触发键：E；本库默认不绑定，改 @trigger 后由引擎加载。
+; 原仓库说明：All macros work at 60 FPS, 90 ms Ping。
+; 差异：原脚本 E:: 里有 KeyWait（等用户松开 E），本转换改为点按 E 后等 720ms，须真机确认。
+down e
+; NOTE: 原 KeyWait 已改为点按，见文件头差异说明
+up e
+wait 720
+down click
+wait 667
+up click
+down shift
+wait 25
+up shift
+down e
+wait 50
+up e

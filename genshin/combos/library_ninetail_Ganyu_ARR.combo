@@ -1,0 +1,19 @@
+@character Ganyu
+@name ARR
+@trigger none
+@mode once
+@status converted
+@source NineTailTeam/Genshin-Impact-Macro Combat/Ganyu/ARR/ARRGanyu.ahk
+@fps 60
+; 原触发键：`；本库默认不绑定，改 @trigger 后由引擎加载。
+; 原仓库说明：All macros work at 60 FPS, 90 ms Ping。
+down click
+wait 1
+up click
+down r
+wait 1
+up r
+wait 1
+down r
+wait 1
+up r

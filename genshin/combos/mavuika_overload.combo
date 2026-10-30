@@ -1,0 +1,50 @@
+@character 玛薇卡
+@name 超载全套
+@trigger ^1
+@mode once
+@status converted
+@source mmmaeko/genshin-ahk Mavu Overload.ahk
+@fps 60
+; 展开说明：ChargeDash = 按住左键，等 70~80ms 后右键冲刺，再等 100~115ms 松左键；
+; 不等终结时再等 185~200ms，等终结时再等 1385~1400ms。
+; Charge2Dash = 同上，但第二次重击按住 1100~1115ms，松开后再等 985~1000ms。
+; 原脚本触发键是 `，本管理器已按 Ji 要求改为 Ctrl+1。
+; 第 1 段：ChargeDash + ChargeDash（等终结）
+down click
+wait 70 80
+tap rclick 20
+wait 100 115
+up click
+wait 185 200
+down click
+wait 70 80
+tap rclick 20
+wait 100 115
+up click
+wait 1385 1400
+; 第 2 段：ChargeDash + Charge2Dash
+down click
+wait 70 80
+tap rclick 20
+wait 100 115
+up click
+wait 185 200
+down click
+wait 70 80
+tap rclick 20
+wait 1100 1115
+up click
+wait 985 1000
+; 第 3 段：ChargeDash + Charge2Dash
+down click
+wait 70 80
+tap rclick 20
+wait 100 115
+up click
+wait 185 200
+down click
+wait 70 80
+tap rclick 20
+wait 1100 1115
+up click
+wait 985 1000
