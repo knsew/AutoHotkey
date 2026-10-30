@@ -1,0 +1,201 @@
+/* 原神连招小助手 - Tauri 版样式
+ * 布局是关键：body 是 flex 列，标题、筛选条、底栏都不滚动，
+ * 只有 .list 自己 overflow-y: auto，所以滚动条只在列表区里，
+ * 不会伸进筛选条、标题和底栏（Ji 2026-10-30 明确要求）。
+ * 颜色、圆角、渐变都按之前那张参考图来，CSS 写这些是现成的，
+ * 不用像 GDI 那样一笔一笔画。 */
+:root {
+  color-scheme: dark;
+  --bg-top: #180d30;
+  --bg-bottom: #241644;
+  --card-top: #33265a;
+  --card-bottom: #241a3d;
+  --card-border: #7a6aa8;
+  --purple: #8b5cf6;
+  --purple-light: #c084fc;
+  --text: #ffffff;
+  --text-dim: #beb4d2;
+  --text-faint: #aaa0be;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: "微软雅黑", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+/* 标题区：固定 */
+.header {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 12px 24px 10px;
+  overflow: hidden;
+}
+.header h1 { margin: 0; font-size: 30px; line-height: 1.2; }
+.header .subtitle { margin: 4px 0 0; font-size: 14px; color: #d2c8e6; }
+/* 柔光：CSS 径向渐变，比 GDI 画实心圆再 AlphaBlend 简单得多，
+ * 而且边缘本身就是软的，不会一刀切。 */
+.glow { position: absolute; border-radius: 50%; pointer-events: none; }
+.glow-big {
+  width: 480px; height: 480px; right: -140px; top: -240px;
+  background: radial-gradient(circle, rgba(139,92,246,.55), transparent 70%);
+}
+.glow-small {
+  width: 220px; height: 220px; right: 60px; top: 60px;
+  background: radial-gradient(circle, rgba(124,58,237,.45), transparent 70%);
+}
+/* 筛选条：固定，跟列表分开，自己的底边就是分界线 */
+.filterbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #120a20;
+  border-top: 1px solid #46376e;
+  border-bottom: 1px solid #46376e;
+}
+.tabs { display: flex; gap: 8px; }
+.tab, .btn-clear {
+  border: 1px solid var(--card-border);
+  background: #2d2348;
+  color: #d2c8e6;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tab.active {
+  background: linear-gradient(90deg, var(--purple), var(--purple-light));
+  border-color: var(--purple-light);
+  color: #fff;
+  font-weight: bold;
+}
+#charSelect, #searchInput {
+  background: #180e2c;
+  color: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+#charSelect { width: 150px; }
+#searchInput { width: 190px; }
+#searchInput::placeholder { color: var(--text-faint); }
+.count { margin-left: auto; font-size: 13px; color: var(--text-faint); white-space: nowrap; }
+/* 列表区：唯一滚动的地方，scroll-behavior 让键盘跳转也平滑，
+ * 浏览器原生的滚轮滚动本身就是带惯性的，比 C 版手写定时器顺。 */
+.list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 20px;
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.list::-webkit-scrollbar { width: 10px; }
+.list::-webkit-scrollbar-thumb { background: #5a4a8a; border-radius: 5px; }
+.list::-webkit-scrollbar-track { background: transparent; }
+.card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  min-height: 60px;
+  background: linear-gradient(180deg, var(--card-top), var(--card-bottom));
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(200,180,240,.25);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  font-family: inherit;
+  width: 100%;
+}
+.card.selected { border: 2px solid #a855f7; background: linear-gradient(180deg, #3e2e66, #2c204a); }
+.card-char { width: 120px; flex: 0 0 auto; }
+.card-char b { display: block; font-size: 17px; }
+.card-char span { font-size: 13px; color: var(--text-dim); }
+.card-name { flex: 1 1 auto; font-size: 17px; font-weight: bold; text-align: left; }
+.star {
+  flex: 0 0 auto;
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; line-height: 1; padding: 4px;
+  color: #9691aa;
+}
+.star.fav { color: #facc15; }
+.pill {
+  flex: 0 0 auto;
+  background: linear-gradient(90deg, var(--purple), var(--purple-light));
+  border: 1px solid var(--purple-light);
+  color: #fff;
+  border-radius: 13px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.pill.none { background: #6e6478; border-color: #6e6478; }
+.empty { padding: 24px; color: var(--text-dim); font-size: 15px; }
+/* 底栏：固定 */
+.footer {
+  flex: 0 0 auto;
+  background: #10091e;
+  border-top: 1px solid #46376e;
+  padding: 10px 20px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #dcd2eb; }
+.dot { width: 16px; height: 16px; border-radius: 50%; background: #a855f7; flex: 0 0 auto; }
+.dot.running { background: #4ade80; }
+.hint { font-size: 13px; color: #9691aa; }
+.actions { margin-left: auto; display: flex; gap: 10px; }
+.btn {
+  border: 1px solid var(--card-border);
+  background: #2d2348;
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn:disabled { opacity: .45; cursor: default; }
+.btn-primary { background: linear-gradient(90deg, var(--purple), var(--purple-light)); border-color: var(--purple-light); }
+/* 弹窗：页面内，不是新窗口 */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.modal-backdrop[hidden] { display: none; }
+.modal {
+  width: 400px; max-width: 92vw;
+  background: #180e2c;
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 20px;
+}
+.modal h2 { margin: 0 0 8px; font-size: 18px; }
+.modal-desc { margin: 0 0 12px; font-size: 14px; color: var(--text-dim); line-height: 1.6; }
+.modal input {
+  width: 100%; background: #120a20; color: #fff;
+  border: 1px solid var(--card-border); border-radius: 10px;
+  padding: 9px 12px; font-size: 16px; font-family: inherit; outline: none;
+}
+.modal-error { color: #f87171; font-size: 14px; margin: 8px 0 0; }
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; }

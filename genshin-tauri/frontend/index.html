@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原神连招小助手</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- 标题区：固定，不滚动 -->
+  <header class="header">
+    <div class="glow glow-big"></div>
+    <div class="glow glow-small"></div>
+    <h1>原神连招小助手</h1>
+    <p class="subtitle">双击就能用 · 只在原神窗口里生效，聊天时按了也不会跑</p>
+  </header>
+
+  <!-- 筛选条：固定，跟列表分开 -->
+  <!-- 关键布局（Ji 2026-10-30 明确要求）：筛选条是独立的一行，列表有自己的
+       滚动区和滚动条，滚动条只在列表区里，不会伸进筛选条、标题和底栏。
+       这一点 C 版做不到：窗口滚动条天生就是整窗高的，筛选条一放进去
+       滚动条就会穿过去。Tauri 里用 flex 布局就天然分开了。 -->
+  <div class="filterbar">
+    <div class="tabs">
+      <button class="tab active" data-tab="all">全部</button>
+      <button class="tab" data-tab="fav">★ 收藏</button>
+      <button class="tab" data-tab="bound">已绑定</button>
+    </div>
+    <select id="charSelect" aria-label="按角色筛选">
+      <option value="">全部角色</option>
+    </select>
+    <input id="searchInput" type="text" placeholder="搜索角色或连招名…" aria-label="搜索">
+    <button id="clearBtn" class="btn-clear">清除</button>
+    <div class="count" id="countText">加载中…</div>
+  </div>
+
+  <!-- 列表区：唯一会滚动的地方，滚动条只在这里 -->
+  <main class="list" id="list" aria-label="连招列表"></main>
+
+  <!-- 底栏：固定，不滚动 -->
+  <footer class="footer">
+    <div class="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">还没开始 · 点右下“开始连招”</span>
+    </div>
+    <div class="hint">关闭窗口时连招一起停止 · ↑↓选卡 · 双击改快捷键 · /搜索 · 急停 F12</div>
+    <div class="actions">
+      <button id="startBtn" class="btn btn-primary">开始连招</button>
+      <button id="stopBtn" class="btn" disabled>停止</button>
+      <button id="editBtn" class="btn" disabled>改快捷键</button>
+      <button id="folderBtn" class="btn">打开文件夹</button>
+    </div>
+  </footer>
+
+  <!-- 改快捷键：页面内弹窗，不是新窗口，不会再出现白底对话框 -->
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal" role="dialog" aria-label="改快捷键">
+      <h2>改快捷键</h2>
+      <p class="modal-desc">输入新的快捷键，例如：Ctrl+1、Ctrl+Shift+1。<br>改完点保存，正在运行的连招会自动重载生效。</p>
+      <input id="hotkeyInput" type="text" placeholder="例如 Ctrl+1">
+      <p class="modal-error" id="modalError" hidden></p>
+      <div class="modal-actions">
+        <button id="saveBtn" class="btn btn-primary">保存</button>
+        <button id="cancelBtn" class="btn">取消</button>
+        <button id="disableBtn" class="btn">停用这套</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

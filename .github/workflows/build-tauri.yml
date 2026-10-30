@@ -1,0 +1,55 @@
+name: build-tauri-launcher
+# Tauri 版启动器构建：只在 genshin-tauri/ 或 genshin/combos 变化时跑，
+# 不跟 C 版 workflow 抢。公开仓，标准 runner 不耗私仓额度。
+on:
+  push:
+    branches: [genshin-slim]
+    paths:
+      - 'genshin-tauri/**'
+      - 'genshin/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+      - name: Build (no bundle, portable exe)
+        working-directory: genshin-tauri/src-tauri
+        run: cargo tauri build --no-bundle
+      - name: Package slim portable folder
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # 官方 AHK 发行包：只留 64 位解释器 + license，跟 C 版精简口径一致
+          Invoke-WebRequest -Uri 'https://github.com/AutoHotkey/AutoHotkey/releases/download/v2.0.31/AutoHotkey_2.0.31.zip' -OutFile ahk.zip
+          Expand-Archive ahk.zip -DestinationPath ahk -Force
+          New-Item -ItemType Directory -Force -Path GenshinCombo/bin, GenshinCombo/genshin | Out-Null
+          Copy-Item genshin-tauri/src-tauri/target/release/genshin-tauri.exe GenshinCombo/GenshinLauncher.exe
+          Copy-Item ahk/AutoHotkey64.exe GenshinCombo/bin/
+          Copy-Item ahk/license.txt GenshinCombo/
+          Copy-Item genshin/engine.ahk GenshinCombo/genshin/
+          Copy-Item genshin/combos GenshinCombo/genshin/combos -Recurse
+          Copy-Item genshin/README.md GenshinCombo/genshin/ -ErrorAction SilentlyContinue
+          Copy-Item genshin/SOURCES.md GenshinCombo/genshin/ -ErrorAction SilentlyContinue
+          @"
+          原神连招小助手（Tauri 版）
+          双击 GenshinLauncher.exe 就能用，不用装 AHK、不用 bat。
+          列表、改快捷键、开始/停止连招都在这一个窗口里。
+          关闭窗口时，连招也会一起停止，不留后台进程。
+          收藏存在 genshin/favorites.txt，文件夹拷走就带走。
+          "@ | Out-File -Encoding utf8 GenshinCombo/README.txt
+          # 自检：禁 32 位/chm/UX/旧 C 启动器混进来
+          $bad = Get-ChildItem GenshinCombo -Recurse | Where-Object { $_.Name -match 'AutoHotkey32|chm|WindowSpy|launcher\.c' }
+          if ($bad) { throw "forbidden files in package: $($bad.Name -join ', ')" }
+          Compress-Archive -Path GenshinCombo -DestinationPath GenshinCombo-slim.zip -Force
+          Get-ChildItem GenshinCombo-slim.zip | Select-Object Name, Length
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GenshinCombo-slim
+          path: GenshinCombo-slim.zip
