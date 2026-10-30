@@ -17,10 +17,11 @@ jobs:
       # 直接用 msvc-dev-cmd 初始化（MonitorTimer 项目已验证过这条路）。
       - uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Compile C launcher (UTF-8, admin manifest)
+      - name: Compile C launcher (UTF-8, admin manifest, icon)
         shell: cmd
         run: |
-          cl /nologo /utf-8 /O2 /DUNICODE /D_UNICODE genshin-launcher\launcher.c /link user32.lib gdi32.lib shell32.lib /OUT:GenshinLauncher.exe
+          rc /fo launcher.res genshin-launcher\launcher.rc
+          cl /nologo /utf-8 /O2 /DUNICODE /D_UNICODE genshin-launcher\launcher.c launcher.res /link user32.lib gdi32.lib shell32.lib /OUT:GenshinLauncher.exe
           dir GenshinLauncher.exe
           rem 默认 manifest 是 asInvoker，和自定义 requireAdministrator 合并会报 c1010001，
           rem 所以不用 MANIFESTINPUT 合并，改用 mt 直接替换整个 manifest 资源。

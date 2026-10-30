@@ -447,10 +447,10 @@ static LRESULT CALLBACK DialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
         HGDIOBJ oldBrush, oldPen;
         COLORREF bg, fg;
         int primary = (di->CtlID == ID_DLG_OK);
-        if (primary) { bg = RGB(255, 143, 171); fg = RGB(255, 255, 255); }
-        else { bg = RGB(255, 255, 255); fg = RGB(200, 80, 110); }
+        if (primary) { bg = RGB(123, 108, 240); fg = RGB(255, 255, 255); }
+        else { bg = RGB(255, 255, 255); fg = RGB(107, 91, 214); }
         brush = CreateSolidBrush(bg);
-        pen = CreatePen(PS_SOLID, 1, primary ? bg : RGB(255, 143, 171));
+        pen = CreatePen(PS_SOLID, 1, primary ? bg : RGB(123, 108, 240));
         oldBrush = SelectObject(di->hDC, brush);
         oldPen = SelectObject(di->hDC, pen);
         RoundRect(di->hDC, di->rcItem.left, di->rcItem.top, di->rcItem.right, di->rcItem.bottom, 14, 14);
@@ -572,19 +572,19 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
     HPEN pen;
     HGDIOBJ oldBrush, oldPen, oldFont;
     int i;
-    /* 背景：奶油粉 */
-    brush = CreateSolidBrush(RGB(255, 245, 247));
+    /* 背景：淡紫底 */
+    brush = CreateSolidBrush(RGB(248, 245, 255));
     rc.left = 0; rc.top = 0; rc.right = clientW; rc.bottom = clientH;
     FillRect(hdc, &rc, brush);
     DeleteObject(brush);
-    /* 顶栏：粉色 + 两个装饰圆 */
-    brush = CreateSolidBrush(RGB(255, 143, 171));
+    /* 顶栏：紫色 + 两个装饰圆 */
+    brush = CreateSolidBrush(RGB(123, 108, 240));
     rc.left = 0; rc.top = 0; rc.right = clientW; rc.bottom = HEADER_H;
     FillRect(hdc, &rc, brush);
     DeleteObject(brush);
     pen = (HPEN)GetStockObject(NULL_PEN);
     oldPen = SelectObject(hdc, pen);
-    brush = CreateSolidBrush(RGB(255, 178, 193));
+    brush = CreateSolidBrush(RGB(169, 155, 255));
     oldBrush = SelectObject(hdc, brush);
     Ellipse(hdc, clientW - 90, -40, clientW + 50, 100);
     Ellipse(hdc, clientW - 220, 66, clientW - 150, 136);
@@ -600,7 +600,14 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
     rc.top = 58; rc.bottom = 88;
     DrawTextW(hdc, L"双击就能用 · 只在原神窗口里生效，聊天时按了也不会跑", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, oldFont);
-    /* 卡片列表 */
+    /* 卡片列表：只在列表区内画，滚上去的卡片不许盖住顶栏和底栏。
+     * 这就是之前“翻滚后遮挡”的根因：以前卡片是先画顶栏、后画卡片，
+     * 半截卡片会直接盖到顶栏副标题上。现在用裁剪区把它拦住。 */
+    {
+        HRGN hClip = CreateRectRgn(0, HEADER_H, clientW, clientH - FOOTER_H);
+        SelectClipRgn(hdc, hClip);
+        DeleteObject(hClip);
+    }
     for (i = 0; i < g_count; i++) {
         int cardY = HEADER_H + 12 + i * (CARD_H + CARD_GAP) - g_scroll;
         int cardX = 20, cardW = clientW - 40;
@@ -609,11 +616,11 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
         int pillW, pillX, pillY;
         if (cardY + CARD_H < HEADER_H || cardY > clientH - FOOTER_H) continue;
         if (i == g_selected) {
-            brush = CreateSolidBrush(RGB(255, 228, 233));
-            pen = CreatePen(PS_SOLID, 2, RGB(255, 143, 171));
+            brush = CreateSolidBrush(RGB(237, 233, 255));
+            pen = CreatePen(PS_SOLID, 2, RGB(123, 108, 240));
         } else {
             brush = CreateSolidBrush(RGB(255, 255, 255));
-            pen = CreatePen(PS_SOLID, 1, RGB(238, 205, 214));
+            pen = CreatePen(PS_SOLID, 1, RGB(217, 208, 255));
         }
         oldBrush = SelectObject(hdc, brush);
         oldPen = SelectObject(hdc, pen);
@@ -646,7 +653,7 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
         if (strcmp(g_combos[i].trigger, "none") == 0)
             brush = CreateSolidBrush(RGB(190, 180, 185));
         else
-            brush = CreateSolidBrush(RGB(255, 143, 171));
+            brush = CreateSolidBrush(RGB(123, 108, 240));
         pen = (HPEN)GetStockObject(NULL_PEN);
         oldBrush = SelectObject(hdc, brush);
         oldPen = SelectObject(hdc, pen);
@@ -666,12 +673,13 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
         DrawTextW(hdc, L"这里还没有连招，请确认 genshin\\combos 文件夹在启动器旁边。", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         SelectObject(hdc, oldFont);
     }
+    SelectClipRgn(hdc, NULL);
     /* 底栏 */
     brush = CreateSolidBrush(RGB(255, 255, 255));
     rc.left = 0; rc.top = clientH - FOOTER_H; rc.right = clientW; rc.bottom = clientH;
     FillRect(hdc, &rc, brush);
     DeleteObject(brush);
-    pen = CreatePen(PS_SOLID, 1, RGB(238, 205, 214));
+    pen = CreatePen(PS_SOLID, 1, RGB(217, 208, 255));
     oldPen = SelectObject(hdc, pen);
     MoveToEx(hdc, 0, clientH - FOOTER_H, NULL);
     LineTo(hdc, clientW, clientH - FOOTER_H);
@@ -743,10 +751,10 @@ static LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         int disabled = (di->itemState & ODS_DISABLED) != 0;
         int primary = (di->CtlID == ID_BTN_START);
         if (disabled) { bg = RGB(225, 225, 225); fg = RGB(160, 160, 160); }
-        else if (primary) { bg = RGB(255, 143, 171); fg = RGB(255, 255, 255); }
-        else { bg = RGB(255, 255, 255); fg = RGB(200, 80, 110); }
+        else if (primary) { bg = RGB(123, 108, 240); fg = RGB(255, 255, 255); }
+        else { bg = RGB(255, 255, 255); fg = RGB(107, 91, 214); }
         brush = CreateSolidBrush(bg);
-        pen = CreatePen(PS_SOLID, 1, disabled ? bg : RGB(255, 143, 171));
+        pen = CreatePen(PS_SOLID, 1, disabled ? bg : RGB(123, 108, 240));
         oldBrush = SelectObject(di->hDC, brush);
         oldPen = SelectObject(di->hDC, pen);
         RoundRect(di->hDC, di->rcItem.left, di->rcItem.top, di->rcItem.right, di->rcItem.bottom, 16, 16);
@@ -877,6 +885,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmd, int nCmdSh
     wcMain.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
     wcMain.lpfnWndProc = MainProc;
     wcMain.hInstance = hInstance;
+    wcMain.hIcon = LoadIconW(hInstance, MAKEINTRESOURCEW(1));
+    wcMain.hIconSm = LoadIconW(hInstance, MAKEINTRESOURCEW(1));
     wcMain.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcMain.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcMain.lpszClassName = L"GenshinComboLauncher";

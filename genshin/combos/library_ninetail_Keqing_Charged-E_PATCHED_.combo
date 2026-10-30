@@ -1,9 +1,10 @@
-@character Keqing
-@name Charged-E (PATCHED)
+@character 刻晴
+@name 元素战技连招 (Charged-E)
 @trigger none
 @mode once
 @status converted
 @source NineTailTeam/Genshin-Impact-Macro Combat/Keqing/Charged-E (PATCHED)/Charged-EKeqing.ahk
+; 原名：Keqing Charged-E (PATCHED)（转换前名称，便于对照原仓库）
 @fps 60
 ; 原触发键：E；本库默认不绑定，改 @trigger 后由引擎加载。
 ; 原仓库说明：All macros work at 60 FPS, 90 ms Ping。

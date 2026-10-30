@@ -1,9 +1,10 @@
-@character Fischl
-@name AARR
+@character 菲谢尔
+@name 弓箭快速连射 (AARR)
 @trigger none
 @mode once
 @status converted
 @source NineTailTeam/Genshin-Impact-Macro Combat/Fischl/AARR/AARRFischl.ahk
+; 原名：Fischl AARR（转换前名称，便于对照原仓库）
 @fps 60
 ; 原触发键：`；本库默认不绑定，改 @trigger 后由引擎加载。
 ; 原仓库说明：All macros work at 60 FPS, 90 ms Ping。

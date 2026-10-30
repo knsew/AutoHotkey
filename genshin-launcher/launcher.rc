@@ -1,0 +1,4 @@
+#include "windows.h"
+
+// exe 图标：紫色星星（原神风格，原创生成图，非官方素材，见 launcher.ico）
+1 ICON "launcher.ico"
