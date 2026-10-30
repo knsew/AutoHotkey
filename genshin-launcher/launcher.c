@@ -22,8 +22,8 @@
 
 #define HEADER_H 104
 #define FOOTER_H 96
-#define CARD_H 64
-#define CARD_GAP 12
+#define CARD_H 72
+#define CARD_GAP 14
 #define MAX_COMBOS 256
 
 #define ID_BTN_START 101
@@ -440,6 +440,16 @@ static LRESULT CALLBACK DialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
         SetFocus(hEdit);
         return 0;
     }
+    case WM_CTLCOLORDLG:
+    case WM_CTLCOLORSTATIC:
+    case WM_CTLCOLOREDIT: {
+        static HBRUSH dlgBrush = NULL;
+        if (!dlgBrush) dlgBrush = CreateSolidBrush(RGB(24, 14, 44));
+        SetBkMode((HDC)wParam, TRANSPARENT);
+        SetTextColor((HDC)wParam, RGB(255, 255, 255));
+        if (msg == WM_CTLCOLOREDIT) SetBkColor((HDC)wParam, RGB(24, 14, 44));
+        return (LRESULT)dlgBrush;
+    }
     case WM_DRAWITEM: {
         DRAWITEMSTRUCT *di = (DRAWITEMSTRUCT *)lParam;
         HBRUSH brush;
@@ -447,10 +457,10 @@ static LRESULT CALLBACK DialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
         HGDIOBJ oldBrush, oldPen;
         COLORREF bg, fg;
         int primary = (di->CtlID == ID_DLG_OK);
-        if (primary) { bg = RGB(123, 108, 240); fg = RGB(255, 255, 255); }
-        else { bg = RGB(255, 255, 255); fg = RGB(107, 91, 214); }
+        if (primary) { bg = RGB(124, 58, 237); fg = RGB(255, 255, 255); }
+        else { bg = RGB(45, 35, 75); fg = RGB(255, 255, 255); }
         brush = CreateSolidBrush(bg);
-        pen = CreatePen(PS_SOLID, 1, primary ? bg : RGB(123, 108, 240));
+        pen = CreatePen(PS_SOLID, 1, primary ? bg : RGB(90, 70, 140));
         oldBrush = SelectObject(di->hDC, brush);
         oldPen = SelectObject(di->hDC, pen);
         RoundRect(di->hDC, di->rcItem.left, di->rcItem.top, di->rcItem.right, di->rcItem.bottom, 14, 14);
@@ -566,38 +576,66 @@ static void LayoutButtons(int clientW, int clientH) {
     if (g_hBtnFolder) MoveWindow(g_hBtnFolder, x + 3 * (bw + gap), y, bw, bh, TRUE);
 }
 
+
+/* 纵向渐变：按 4px 一条带插值填充，GDI 没有现成的渐变 API 就这么画，
+ * 卡片和按钮不多，Paint 时这点开销可以忽略。 */
+static void FillVerticalGradient(HDC hdc, int x, int y, int w, int h, COLORREF top, COLORREF bottom) {
+    int i;
+    for (i = 0; i < h; i += 4) {
+        int t = h > 1 ? (i * 255) / h : 0;
+        COLORREF c = RGB((GetRValue(top) * (255 - t) + GetRValue(bottom) * t) / 255,
+                         (GetGValue(top) * (255 - t) + GetGValue(bottom) * t) / 255,
+                         (GetBValue(top) * (255 - t) + GetBValue(bottom) * t) / 255);
+        HBRUSH b = CreateSolidBrush(c);
+        RECT r;
+        r.left = x; r.top = y + i; r.right = x + w; r.bottom = y + i + 4;
+        if (r.bottom > y + h) r.bottom = y + h;
+        FillRect(hdc, &r, b);
+        DeleteObject(b);
+    }
+}
+
+static void FillHorizontalGradient(HDC hdc, int x, int y, int w, int h, COLORREF left, COLORREF right) {
+    int i;
+    for (i = 0; i < w; i += 4) {
+        int t = w > 1 ? (i * 255) / w : 0;
+        COLORREF c = RGB((GetRValue(left) * (255 - t) + GetRValue(right) * t) / 255,
+                         (GetGValue(left) * (255 - t) + GetGValue(right) * t) / 255,
+                         (GetBValue(left) * (255 - t) + GetBValue(right) * t) / 255);
+        HBRUSH b = CreateSolidBrush(c);
+        RECT r;
+        r.left = x + i; r.top = y; r.right = x + i + 4; r.bottom = y + h;
+        if (r.right > x + w) r.right = x + w;
+        FillRect(hdc, &r, b);
+        DeleteObject(b);
+    }
+}
+
 static void PaintMain(HDC hdc, int clientW, int clientH) {
     RECT rc;
     HBRUSH brush;
     HPEN pen;
     HGDIOBJ oldBrush, oldPen, oldFont;
     int i;
-    /* 背景：淡紫底 */
-    brush = CreateSolidBrush(RGB(248, 245, 255));
-    rc.left = 0; rc.top = 0; rc.right = clientW; rc.bottom = clientH;
-    FillRect(hdc, &rc, brush);
-    DeleteObject(brush);
-    /* 顶栏：紫色 + 两个装饰圆 */
-    brush = CreateSolidBrush(RGB(123, 108, 240));
-    rc.left = 0; rc.top = 0; rc.right = clientW; rc.bottom = HEADER_H;
-    FillRect(hdc, &rc, brush);
-    DeleteObject(brush);
+    /* 背景：截图同款深紫渐变（上深下稍亮），顶栏不再是实色条，
+     * 标题直接画在渐变上；右上角两个大圆是截图里的装饰圆。 */
+    FillVerticalGradient(hdc, 0, 0, clientW, clientH, RGB(22, 11, 42), RGB(38, 22, 70));
     pen = (HPEN)GetStockObject(NULL_PEN);
     oldPen = SelectObject(hdc, pen);
-    brush = CreateSolidBrush(RGB(169, 155, 255));
+    brush = CreateSolidBrush(RGB(88, 48, 160));
     oldBrush = SelectObject(hdc, brush);
-    Ellipse(hdc, clientW - 90, -40, clientW + 50, 100);
-    Ellipse(hdc, clientW - 220, 66, clientW - 150, 136);
+    Ellipse(hdc, clientW - 110, -70, clientW + 70, 110);
+    Ellipse(hdc, clientW - 260, 60, clientW - 170, 150);
     SelectObject(hdc, oldBrush);
     SelectObject(hdc, oldPen);
     DeleteObject(brush);
     SetBkMode(hdc, TRANSPARENT);
     SetTextColor(hdc, RGB(255, 255, 255));
     oldFont = SelectObject(hdc, g_fontTitle);
-    rc.left = 24; rc.top = 16; rc.right = clientW - 24; rc.bottom = 56;
+    rc.left = 24; rc.top = 14; rc.right = clientW - 24; rc.bottom = 60;
     DrawTextW(hdc, L"原神连招小助手", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, g_fontSub);
-    rc.top = 58; rc.bottom = 88;
+    rc.top = 64; rc.bottom = 92;
     DrawTextW(hdc, L"双击就能用 · 只在原神窗口里生效，聊天时按了也不会跑", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, oldFont);
     /* 卡片列表：只在列表区内画，滚上去的卡片不许盖住顶栏和底栏。
@@ -616,11 +654,11 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
         int pillW, pillX, pillY;
         if (cardY + CARD_H < HEADER_H || cardY > clientH - FOOTER_H) continue;
         if (i == g_selected) {
-            brush = CreateSolidBrush(RGB(237, 233, 255));
-            pen = CreatePen(PS_SOLID, 2, RGB(123, 108, 240));
+            brush = CreateSolidBrush(RGB(54, 40, 90));
+            pen = CreatePen(PS_SOLID, 2, RGB(139, 92, 246));
         } else {
-            brush = CreateSolidBrush(RGB(255, 255, 255));
-            pen = CreatePen(PS_SOLID, 1, RGB(217, 208, 255));
+            brush = CreateSolidBrush(RGB(42, 32, 72));
+            pen = CreatePen(PS_SOLID, 1, RGB(90, 70, 140));
         }
         oldBrush = SelectObject(hdc, brush);
         oldPen = SelectObject(hdc, pen);
@@ -630,16 +668,16 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
         DeleteObject(brush);
         DeleteObject(pen);
         SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, RGB(74, 63, 71));
+        SetTextColor(hdc, RGB(255, 255, 255));
         oldFont = SelectObject(hdc, g_fontCard);
-        rc.left = cardX + 18; rc.top = cardY + 8; rc.right = cardX + 150; rc.bottom = cardY + 34;
+        rc.left = cardX + 18; rc.top = cardY + 10; rc.right = cardX + 150; rc.bottom = cardY + 38;
         DrawTextW(hdc, g_combos[i].character, -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-        rc.left = cardX + 150; rc.right = cardX + cardW - 160;
-        rc.top = cardY + 18; rc.bottom = cardY + 46;
+        rc.left = cardX + 170; rc.right = cardX + cardW - 160;
+        rc.top = cardY + 20; rc.bottom = cardY + 52;
         DrawTextW(hdc, g_combos[i].name, -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         SelectObject(hdc, g_fontCardSmall);
-        SetTextColor(hdc, RGB(150, 135, 142));
-        rc.left = cardX + 18; rc.top = cardY + 36; rc.right = cardX + 150; rc.bottom = cardY + 56;
+        SetTextColor(hdc, RGB(190, 180, 210));
+        rc.left = cardX + 18; rc.top = cardY + 40; rc.right = cardX + 150; rc.bottom = cardY + 60;
         if (strcmp(g_combos[i].mode, "hold") == 0) wcscpy(modeText, L"按住循环");
         else wcscpy(modeText, L"按一次跑完");
         DrawTextW(hdc, modeText, -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
@@ -649,44 +687,55 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
         GetTextExtentPoint32W(hdc, trig, (int)wcslen(trig), &sz);
         pillW = sz.cx + 28;
         pillX = cardX + cardW - 18 - pillW;
-        pillY = cardY + 18;
-        if (strcmp(g_combos[i].trigger, "none") == 0)
-            brush = CreateSolidBrush(RGB(190, 180, 185));
-        else
-            brush = CreateSolidBrush(RGB(123, 108, 240));
-        pen = (HPEN)GetStockObject(NULL_PEN);
-        oldBrush = SelectObject(hdc, brush);
-        oldPen = SelectObject(hdc, pen);
-        RoundRect(hdc, pillX, pillY, pillX + pillW, pillY + 28, 14, 14);
-        SelectObject(hdc, oldBrush);
-        SelectObject(hdc, oldPen);
-        DeleteObject(brush);
+        pillY = cardY + 21;
+        if (strcmp(g_combos[i].trigger, "none") == 0) {
+            brush = CreateSolidBrush(RGB(110, 100, 120));
+            pen = (HPEN)GetStockObject(NULL_PEN);
+            oldBrush = SelectObject(hdc, brush);
+            oldPen = SelectObject(hdc, pen);
+            RoundRect(hdc, pillX, pillY, pillX + pillW, pillY + 30, 15, 15);
+            SelectObject(hdc, oldBrush);
+            SelectObject(hdc, oldPen);
+            DeleteObject(brush);
+        } else {
+            HRGN hPillClip = CreateRoundRectRgn(pillX, pillY, pillX + pillW, pillY + 30, 15, 15);
+            SelectClipRgn(hdc, hPillClip);
+            DeleteObject(hPillClip);
+            FillHorizontalGradient(hdc, pillX, pillY, pillW, 30, RGB(124, 58, 237), RGB(168, 85, 247));
+            SelectClipRgn(hdc, NULL);
+            pen = CreatePen(PS_SOLID, 1, RGB(168, 85, 247));
+            oldPen = SelectObject(hdc, pen);
+            SelectObject(hdc, GetStockObject(NULL_BRUSH));
+            RoundRect(hdc, pillX, pillY, pillX + pillW, pillY + 30, 15, 15);
+            SelectObject(hdc, oldPen);
+            DeleteObject(pen);
+        }
         SetTextColor(hdc, RGB(255, 255, 255));
-        rc.left = pillX; rc.top = pillY; rc.right = pillX + pillW; rc.bottom = pillY + 28;
+        rc.left = pillX; rc.top = pillY; rc.right = pillX + pillW; rc.bottom = pillY + 30;
         DrawTextW(hdc, trig, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
         SelectObject(hdc, oldFont);
     }
     if (g_count == 0) {
-        SetTextColor(hdc, RGB(150, 135, 142));
+        SetTextColor(hdc, RGB(190, 180, 210));
         oldFont = SelectObject(hdc, g_fontCard);
         rc.left = 24; rc.top = HEADER_H + 30; rc.right = clientW - 24; rc.bottom = HEADER_H + 70;
         DrawTextW(hdc, L"这里还没有连招，请确认 genshin\\combos 文件夹在启动器旁边。", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         SelectObject(hdc, oldFont);
     }
     SelectClipRgn(hdc, NULL);
-    /* 底栏 */
-    brush = CreateSolidBrush(RGB(255, 255, 255));
+    /* 底栏：截图同款深底 */
+    brush = CreateSolidBrush(RGB(16, 9, 30));
     rc.left = 0; rc.top = clientH - FOOTER_H; rc.right = clientW; rc.bottom = clientH;
     FillRect(hdc, &rc, brush);
     DeleteObject(brush);
-    pen = CreatePen(PS_SOLID, 1, RGB(217, 208, 255));
+    pen = CreatePen(PS_SOLID, 1, RGB(60, 45, 100));
     oldPen = SelectObject(hdc, pen);
     MoveToEx(hdc, 0, clientH - FOOTER_H, NULL);
     LineTo(hdc, clientW, clientH - FOOTER_H);
     SelectObject(hdc, oldPen);
     DeleteObject(pen);
     /* 状态圆点 + 文案 */
-    brush = CreateSolidBrush(g_engineRunning ? RGB(76, 175, 80) : RGB(190, 190, 190));
+    brush = CreateSolidBrush(g_engineRunning ? RGB(76, 175, 80) : RGB(170, 165, 180));
     pen = (HPEN)GetStockObject(NULL_PEN);
     oldBrush = SelectObject(hdc, brush);
     oldPen = SelectObject(hdc, pen);
@@ -695,14 +744,14 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
     SelectObject(hdc, oldPen);
     DeleteObject(brush);
     SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, RGB(74, 63, 71));
+    SetTextColor(hdc, RGB(220, 210, 235));
     oldFont = SelectObject(hdc, g_fontCardSmall);
     rc.left = 48; rc.top = clientH - FOOTER_H + 10; rc.right = clientW - 24; rc.bottom = clientH - FOOTER_H + 34;
     if (g_engineRunning)
         DrawTextW(hdc, L"连招运行中 · 切到原神，按快捷键就能打", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     else
         DrawTextW(hdc, L"还没开始 · 点右下“开始连招”", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-    SetTextColor(hdc, RGB(150, 135, 142));
+    SetTextColor(hdc, RGB(150, 140, 170));
     rc.top = clientH - 22; rc.bottom = clientH - 4;
     DrawTextW(hdc, L"关闭窗口时，连招也会一起停止 · 急停按 F12", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, oldFont);
@@ -712,9 +761,9 @@ static LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     switch (msg) {
     case WM_CREATE: {
         g_hMain = hwnd;
-        g_fontTitle = CreateFontW(-28, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
-        g_fontSub = CreateFontW(-15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
-        g_fontCard = CreateFontW(-16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
+        g_fontTitle = CreateFontW(-36, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
+        g_fontSub = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
+        g_fontCard = CreateFontW(-20, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
         g_fontCardSmall = CreateFontW(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
         g_fontPill = CreateFontW(-14, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
         g_fontBtn = CreateFontW(-15, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
@@ -750,18 +799,32 @@ static LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         COLORREF bg, fg;
         int disabled = (di->itemState & ODS_DISABLED) != 0;
         int primary = (di->CtlID == ID_BTN_START);
-        if (disabled) { bg = RGB(225, 225, 225); fg = RGB(160, 160, 160); }
-        else if (primary) { bg = RGB(123, 108, 240); fg = RGB(255, 255, 255); }
-        else { bg = RGB(255, 255, 255); fg = RGB(107, 91, 214); }
-        brush = CreateSolidBrush(bg);
-        pen = CreatePen(PS_SOLID, 1, disabled ? bg : RGB(123, 108, 240));
-        oldBrush = SelectObject(di->hDC, brush);
-        oldPen = SelectObject(di->hDC, pen);
-        RoundRect(di->hDC, di->rcItem.left, di->rcItem.top, di->rcItem.right, di->rcItem.bottom, 16, 16);
-        SelectObject(di->hDC, oldBrush);
-        SelectObject(di->hDC, oldPen);
-        DeleteObject(brush);
-        DeleteObject(pen);
+        if (disabled) { bg = RGB(60, 55, 80); fg = RGB(150, 145, 170); }
+        else if (primary) { bg = RGB(124, 58, 237); fg = RGB(255, 255, 255); }
+        else { bg = RGB(45, 35, 75); fg = RGB(255, 255, 255); }
+        if (!disabled && primary) {
+            HRGN hBtnClip = CreateRoundRectRgn(di->rcItem.left, di->rcItem.top, di->rcItem.right, di->rcItem.bottom, 16, 16);
+            SelectClipRgn(di->hDC, hBtnClip);
+            DeleteObject(hBtnClip);
+            FillHorizontalGradient(di->hDC, di->rcItem.left, di->rcItem.top, di->rcItem.right - di->rcItem.left, di->rcItem.bottom - di->rcItem.top, RGB(124, 58, 237), RGB(168, 85, 247));
+            SelectClipRgn(di->hDC, NULL);
+            pen = CreatePen(PS_SOLID, 1, RGB(168, 85, 247));
+            oldPen = SelectObject(di->hDC, pen);
+            SelectObject(di->hDC, GetStockObject(NULL_BRUSH));
+            RoundRect(di->hDC, di->rcItem.left, di->rcItem.top, di->rcItem.right, di->rcItem.bottom, 16, 16);
+            SelectObject(di->hDC, oldPen);
+            DeleteObject(pen);
+        } else {
+            brush = CreateSolidBrush(bg);
+            pen = CreatePen(PS_SOLID, 1, disabled ? bg : RGB(90, 70, 140));
+            oldBrush = SelectObject(di->hDC, brush);
+            oldPen = SelectObject(di->hDC, pen);
+            RoundRect(di->hDC, di->rcItem.left, di->rcItem.top, di->rcItem.right, di->rcItem.bottom, 16, 16);
+            SelectObject(di->hDC, oldBrush);
+            SelectObject(di->hDC, oldPen);
+            DeleteObject(brush);
+            DeleteObject(pen);
+        }
         SetBkMode(di->hDC, TRANSPARENT);
         SetTextColor(di->hDC, fg);
         SelectObject(di->hDC, g_fontBtn);
