@@ -21,6 +21,7 @@
 #include <math.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <uxtheme.h>
 
 #define HEADER_H 88
 #define FILTER_H 52
@@ -494,7 +495,7 @@ static LRESULT CALLBACK DialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     case WM_CTLCOLOREDIT: {
         static HBRUSH dlgBrush = NULL;
         if (!dlgBrush) dlgBrush = CreateSolidBrush(RGB(24, 14, 44));
-        SetBkMode((HDC)wParam, TRANSPARENT);
+        SetBkMode((HDC)wParam, OPAQUE);
         SetTextColor((HDC)wParam, RGB(255, 255, 255));
         SetBkColor((HDC)wParam, RGB(24, 14, 44));
         return (LRESULT)dlgBrush;
@@ -921,6 +922,7 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
     /* 卡片列表：只在列表区内画，滚上去的卡片不许盖住顶栏和底栏。
      * 这就是之前“翻滚后遮挡”的根因：以前卡片是先画顶栏、后画卡片，
      * 半截卡片会直接盖到顶栏副标题上。现在用裁剪区把它拦住。 */
+    int savedListClip = SaveDC(hdc);
     {
         HRGN hClip = CreateRectRgn(0, LIST_TOP, clientW, clientH - FOOTER_H);
         SelectClipRgn(hdc, hClip);
@@ -935,13 +937,14 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
         int pillW, pillX, pillY;
         if (cardY + CARD_H < LIST_TOP || cardY > clientH - FOOTER_H) continue;
         {
+            int savedCardClip = SaveDC(hdc);
             HRGN hCardClip = CreateRoundRectRgn(cardX, cardY, cardX + cardW, cardY + CARD_H, 18, 18);
             SelectClipRgn(hdc, hCardClip);
             DeleteObject(hCardClip);
             FillVerticalGradient(hdc, cardX, cardY, cardW, CARD_H,
                 src == g_selected ? RGB(62, 46, 102) : RGB(51, 38, 90),
                 src == g_selected ? RGB(44, 32, 74) : RGB(36, 26, 61));
-            SelectClipRgn(hdc, NULL);
+            RestoreDC(hdc, savedCardClip);
         }
         pen = CreatePen(PS_SOLID, src == g_selected ? 2 : 1, src == g_selected ? RGB(168, 85, 247) : RGB(122, 106, 168));
         oldPen = SelectObject(hdc, pen);
@@ -987,11 +990,12 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
             SelectObject(hdc, oldPen);
             DeleteObject(brush);
         } else {
+            int savedPillClip = SaveDC(hdc);
             HRGN hPillClip = CreateRoundRectRgn(pillX, pillY, pillX + pillW, pillY + 26, 13, 13);
             SelectClipRgn(hdc, hPillClip);
             DeleteObject(hPillClip);
             FillHorizontalGradient(hdc, pillX, pillY, pillW, 26, RGB(139, 92, 246), RGB(192, 132, 252));
-            SelectClipRgn(hdc, NULL);
+            RestoreDC(hdc, savedPillClip);
             pen = CreatePen(PS_SOLID, 1, RGB(168, 85, 247));
             oldPen = SelectObject(hdc, pen);
             SelectObject(hdc, GetStockObject(NULL_BRUSH));
@@ -1019,7 +1023,7 @@ static void PaintMain(HDC hdc, int clientW, int clientH) {
             DrawTextW(hdc, L"没有符合条件的连招，点筛选条右边的“清除”试试。", -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         SelectObject(hdc, oldFont);
     }
-    SelectClipRgn(hdc, NULL);
+    RestoreDC(hdc, savedListClip);
     /* 底栏：截图同款深底 */
     brush = CreateSolidBrush(RGB(16, 9, 30));
     rc.left = 0; rc.top = clientH - FOOTER_H; rc.right = clientW; rc.bottom = clientH;
@@ -1075,6 +1079,7 @@ static LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         SendMessageW(g_hCmbChar, CB_SETITEMHEIGHT, (WPARAM)-1, 32);
         SendMessageW(g_hCmbChar, CB_SETITEMHEIGHT, 0, 24);
         g_hEditSearch = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 0, 0, 190, 32, hwnd, (HMENU)ID_EDIT_SEARCH, g_hInst, NULL);
+        SetWindowTheme(g_hEditSearch, L"", L"");
         SendMessageW(g_hEditSearch, WM_SETFONT, (WPARAM)g_fontCardSmall, TRUE);
         g_hBtnClear = CreateWindowExW(0, L"BUTTON", L"清除", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 0, 0, 56, 32, hwnd, (HMENU)ID_BTN_CLEAR, g_hInst, NULL);
         {
@@ -1120,7 +1125,9 @@ static LRESULT CALLBACK MainProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         if ((HWND)lParam == g_hEditSearch) {
             static HBRUSH searchBrush = NULL;
             if (!searchBrush) searchBrush = CreateSolidBrush(RGB(24, 14, 44));
-            SetBkMode((HDC)wParam, TRANSPARENT);
+            /* EDIT 一定要用 OPAQUE：TRANSPARENT 时背景不填刷子，
+             * 主题白底就露出来了，截图里搜索框发白就是这个原因。 */
+            SetBkMode((HDC)wParam, OPAQUE);
             SetTextColor((HDC)wParam, RGB(255, 255, 255));
             SetBkColor((HDC)wParam, RGB(24, 14, 44));
             return (LRESULT)searchBrush;
