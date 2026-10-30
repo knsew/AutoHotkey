@@ -17,19 +17,33 @@ Ji 2026-10-30 定：fork 后精简发行文件，只留解释器加连招。
 - 打包脚本：`tools/package-slim.py`，输入官方发行 zip，输出精简 zip，
   并自检包里没有 UX / chm / 32 位 / Install.cmd 才算通过。
 
-## 启动器：简单版，只管脚本和热键
+## 启动器：C 语言版，精美一点、双击 exe 就能用
 
-`genshin/launcher.ahk` 是简单启动器，Ji 定“简单管理一下脚本和热键就行”，
-所以它只做：列表展示 38 套连招、改热键（改写 `.combo` 的 `@trigger`）、
-启动 / 停止 / 重载引擎、打开连招文件夹。没有配置页、没有更新检查、
-没有其他管理功能。真正打连招的是 `genshin/engine.ahk`。
+Ji 2026-10-30 补定：启动器用 C 语言写个精美一点的 GUI，给女孩子用，
+不要 bat，双击 exe 运行，过程尽量简单；构建走 GitHub。
+
+`genshin-launcher/launcher.c` 是纯 Win32 C 启动器（无第三方库）：
+粉色奶油底 + 圆角卡片列表 + 触发键小药丸，标题“原神连招小助手”。
+它只做：列表展示 38 套连招、改快捷键（好看的 `Ctrl+1` 写法，改写
+`.combo` 的 `@trigger`，引擎在运行时自动重载）、开始 / 停止连招、
+打开连招文件夹。没有配置页、没有更新检查、没有其他管理功能。
+真正打连招的是 `genshin/engine.ahk`。
+
+入口变化：精简包根目录的 `GenshinLauncher.exe` 就是入口，不再有 bat，
+旧 AHK 启动器 `genshin/launcher.ahk` 已删除。启动器自带
+requireAdministrator 清单：双击时弹一次 UAC，之后按键才能发进游戏；
+关闭窗口时连招也会一起停止。构建见
+`.github/workflows/build-launcher.yml`（MSVC + /utf-8，产物是 Actions
+artifact，不是 Release）。
 
 ## 用法
 
-1. 从官方 Release 下载对应版本的 `AutoHotkey_2.0.31.zip`（或更新版）。
-2. 在仓库根目录跑：`python3 tools/package-slim.py /tmp/AutoHotkey_2.0.31.zip`
-3. 解压生成的精简 zip，双击“启动原神连招.bat”。
-4. 在启动器里点“启动引擎”，切到原神窗口按 Ctrl+数字触发。
+1. 推 `genshin-slim` 分支即触发 GitHub 构建，产物在 Actions 的
+   `GenshinCombo-slim` artifact 里下载（不是 Release）。
+2. 解压后双击 `GenshinLauncher.exe`（弹一次 UAC 属正常）。
+3. 在启动器里点“开始连招”，切到原神窗口按快捷键触发。
+4. 本地打包（备用，不含启动器 exe 时会告警）：
+   `python3 tools/package-slim.py /tmp/AutoHotkey_2.0.31.zip [输出zip] [启动器exe]`
 
 在 fork 仓库里直接开发时（没有 bin/ 解释器），需本机已装 AHK v2，
 双击 `genshin/launcher.ahk` 即可，启动器会用已装的解释器拉引擎。

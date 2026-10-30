@@ -1,0 +1,61 @@
+name: Build Genshin Launcher
+
+# 只在 genshin-slim 分支上跑：推代码即构建，产物是 Actions artifact，
+# 不是 Release。Release / tag 仍需 Ji 亲口点头才建，本 workflow 不建。
+on:
+  push:
+    branches: [genshin-slim]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # windows-latest 现为 VS 18，不要再用 2022 的 vcvarsall 路径，
+      # 直接用 msvc-dev-cmd 初始化（MonitorTimer 项目已验证过这条路）。
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Compile C launcher (UTF-8, admin manifest)
+        shell: cmd
+        run: |
+          cl /nologo /utf-8 /O2 /DUNICODE /D_UNICODE genshin-launcher\launcher.c /link /MANIFEST:embed /MANIFESTINPUT:genshin-launcher\launcher.manifest user32.lib gdi32.lib shell32.lib /OUT:GenshinLauncher.exe
+          dir GenshinLauncher.exe
+
+      - name: Package slim portable folder
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ahkVersion = '2.0.31'
+          $zip = "AutoHotkey_$ahkVersion.zip"
+          Invoke-WebRequest -Uri "https://github.com/AutoHotkey/AutoHotkey/releases/download/v$ahkVersion/$zip" -OutFile $zip
+          Expand-Archive $zip -DestinationPath ahk-official -Force
+          # 精简：只留 64 位解释器 + license，删 32 位、chm、UX、安装器
+          New-Item -ItemType Directory -Force -Path GenshinCombo\bin | Out-Null
+          Copy-Item ahk-official\AutoHotkey64.exe GenshinCombo\bin\
+          Copy-Item ahk-official\license.txt GenshinCombo\
+          Copy-Item GenshinLauncher.exe GenshinCombo\
+          Copy-Item -Recurse genshin GenshinCombo\genshin
+          # 旧 AHK 启动器已由 C 启动器取代，不进包
+          Remove-Item GenshinCombo\genshin\launcher.ahk -ErrorAction SilentlyContinue
+          Remove-Item GenshinCombo\genshin\tools -Recurse -ErrorAction SilentlyContinue
+          @'
+          原神连招小助手（精简版）
+          用法：双击 GenshinLauncher.exe，点“开始连招”，切到原神按快捷键就能打。
+          全局键：F12 急停，Home 暂停/恢复，End 退出引擎。关闭窗口时连招也会一起停止。
+          连招只在原神窗口聚焦时生效。改快捷键：点一套连招，再点“改快捷键”。
+          本包未在真机上验证过，首跑先只开 1 套低风险连招验证。
+          AutoHotkey 本体 GPLv2，源码见 fork 仓库；连招来源见 genshin\SOURCES.md。
+          '@ | Out-File -Encoding utf8 GenshinCombo\README.txt
+          $files = Get-ChildItem -Recurse GenshinCombo | Select-Object -ExpandProperty FullName
+          Write-Host "package files: $($files.Count)"
+          if ($files -match 'UX\\' -or $files -match 'AutoHotkey32' -or $files -match '\.chm$') { throw '精简包里混进了不该有的文件' }
+          Compress-Archive -Path GenshinCombo -DestinationPath GenshinCombo-slim.zip -Force
+          Get-Item GenshinCombo-slim.zip | Select-Object Name, Length
+
+      - name: Upload slim package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GenshinCombo-slim
+          path: GenshinCombo-slim.zip

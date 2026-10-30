@@ -17,13 +17,12 @@
   或不传参数，默认读 /tmp/AutoHotkey_2.0.31.zip、写到仓库外
   ../GenshinCombo-slim.zip（避免把产物 zip 本身打进包里）。
 
-产物结构（解压即用，不用另装 AHK）：
+产物结构（解压即用，不用另装 AHK，不用 bat）：
   GenshinCombo/
+    GenshinLauncher.exe   C 语言启动器：双击即用（须先在 GitHub 上构建）
     bin/AutoHotkey64.exe
     license.txt
-    启动原神连招.bat
     README.txt
-    genshin/launcher.ahk   简单启动器：只管脚本列表 + 热键修改
     genshin/engine.ahk     连招引擎
     genshin/combos/*.combo
     genshin/docs/ABANDONED.md
@@ -64,15 +63,18 @@ def main() -> int:
             zf.extract("AutoHotkey64.exe", os.path.join(stage, "bin"))
             zf.extract("license.txt", stage)
         # 解释器只留 64 位：32 位、chm、UX、Install.cmd 一律不进包。
-        shutil.copytree(genshin_dir, os.path.join(stage, "genshin"))
-        with open(os.path.join(stage, "启动原神连招.bat"), "w", encoding="gbk", errors="replace") as f:
-            f.write('@echo off\r\n')
-            f.write('cd /d "%~dp0"\r\n')
-            f.write('start "" "%~dp0bin\\AutoHotkey64.exe" "%~dp0genshin\\launcher.ahk"\r\n')
+        # 旧 AHK 启动器已由 C 启动器取代，不进包。
+        shutil.copytree(genshin_dir, os.path.join(stage, "genshin"),
+                        ignore=shutil.ignore_patterns("launcher.ahk"))
+        launcher_exe = sys.argv[3] if len(sys.argv) > 3 else os.path.join(REPO_ROOT, "GenshinLauncher.exe")
+        if os.path.isfile(launcher_exe):
+            shutil.copyfile(launcher_exe, os.path.join(stage, "GenshinLauncher.exe"))
+        else:
+            print("警告：未找到 GenshinLauncher.exe（须先在 GitHub 上构建），包里暂无启动器 exe。")
         with open(os.path.join(stage, "README.txt"), "w", encoding="utf-8") as f:
             f.write("原神连招精简版（AutoHotkey v2 精简发行 + 连招）\n\n")
-            f.write("用法：双击“启动原神连招.bat”，在启动器里看脚本列表、改热键，\n")
-            f.write("点“启动引擎”后切到原神窗口按 Ctrl+数字触发连招。\n")
+            f.write("用法：双击 GenshinLauncher.exe，在启动器里看脚本列表、改热键，\n")
+            f.write("点“开始连招”后切到原神窗口按快捷键触发连招。\n")
             f.write("全局键：F12 急停，Home 暂停/恢复，End 退出引擎。\n")
             f.write("连招只在原神窗口聚焦时生效；改连招只改 genshin/combos/*.combo。\n\n")
             f.write("本包只含 64 位解释器 + license + 连招，已删 32 位、帮助文档、\n")
